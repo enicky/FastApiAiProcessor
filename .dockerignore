@@ -1,0 +1,7 @@
+models
+files
+__pycache__
+fastapi
+deploy
+.vscode
+.gitignore

@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+coloredlogs
+dapr-ext-fastapi
+matplotlib
+torch
+torchvision
+scikit-learn
+pandas
+numpy 
+pyarrow
+azure-monitor-opentelemetry

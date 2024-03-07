@@ -1,0 +1,92 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-fastapiprocessor-models
+spec:
+  storageClassName: nfs-client
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pvc-fastapiprocessor-files
+spec:
+  storageClassName: nfs-client
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi    
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapiprocessor
+  labels:
+    app: processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: processor
+  template:
+    metadata:
+      labels:
+        app: processor
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "fastapiprocessor"
+        dapr.io/app-port: "8000"
+        dapr.io/config: "appconfig"
+
+    spec:
+      volumes:
+      - name: models-volume
+        persistentVolumeClaim:
+          claimName: pvc-fastapiprocessor-models
+      - name: files-volume
+        persistentVolumeClaim:
+          claimName: pvc-fastapiprocessor-files
+      containers:
+      - name: processor
+        image: neichmann/fastapiaiprocessor:1.7
+        env:
+          - name: APP_PORT
+            value: "8000"
+          - name: AI_MODELS_PATH
+            value: "/models/"
+          - name: MODELS_PATH
+            value: '/files/'
+          - name: DATA_PATH
+            value: '/files/'
+        ports:
+          - containerPort: 8000
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: models-volume
+            mountPath: /models
+          - name: files-volume
+            mountPath: /files
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: fastapiprocessor
+  labels:
+    app: dapr-fastapiprocessor
+    kubernetes.io/name: fastapiprocessor
+spec:
+  ports:
+    - name: fastapiprocessor
+      protocol: TCP
+      port: 8000
+      targetPort: 8000
+      nodePort: 31000
+  selector:
+    app: processor
+  type: NodePort
+  sessionAffinity: None
